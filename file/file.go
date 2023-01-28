@@ -77,11 +77,10 @@ func ReadBytes(filename string) ([]byte, error) {
 }
 
 // Split 根据块大小切分文件
-func Split(filename string, chunkSize int64) error {
+func Split(filename string, chunkSize int64, execute func(num int, data []byte)) error {
 	var (
 		fi  os.FileInfo
 		fr  *os.File
-		tf  string
 		err error
 	)
 	fi, err = os.Stat(filename)
@@ -97,7 +96,6 @@ func Split(filename string, chunkSize int64) error {
 		return err
 	}
 	defer fr.Close()
-	tf = fmt.Sprint("./", strings.TrimSuffix(fi.Name(), filepath.Ext(fi.Name())), "%d", ".tmp")
 	b := make([]byte, chunkSize)
 	var i int64 = 1
 	for ; i <= int64(num); i++ {
@@ -106,11 +104,8 @@ func Split(filename string, chunkSize int64) error {
 			b = make([]byte, fi.Size()-(i-1)*chunkSize)
 		}
 		if _, err = fr.Read(b); err == nil {
-			err = Create(fmt.Sprintf(tf, i), b)
+			execute(int(i), b)
 		}
-	}
-	if err != nil {
-		return deleteAllTmp(filepath.Dir(filename), strings.TrimSuffix(fi.Name(), filepath.Ext(fi.Name())))
 	}
 	return err
 }

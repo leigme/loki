@@ -1,7 +1,10 @@
 package file
 
 import (
+	"fmt"
 	"log"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -97,6 +100,7 @@ func TestSplit(t *testing.T) {
 	type args struct {
 		filename  string
 		chunkSize int64
+		execute   func(data []byte)
 	}
 	tests := []struct {
 		name    string
@@ -117,11 +121,21 @@ func TestSplit(t *testing.T) {
 			if err := Create("test_split.txt", []byte("test_split")); (err != nil) != tt.wantErr {
 				t.Errorf("Split() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := Split(tt.args.filename, tt.args.chunkSize); (err != nil) != tt.wantErr {
+			if err := Split(tt.args.filename, tt.args.chunkSize, func(num int, data []byte) {
+				ft := fmt.Sprintf("%s%d.tmp", strings.TrimSuffix(tt.args.filename, filepath.Ext(tt.args.filename)), num)
+				err := Create(ft, data)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("Split() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			}); (err != nil) != tt.wantErr {
 				t.Errorf("Split() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err := Delete("test_split.txt"); err != nil {
 				log.Fatal(err)
+			}
+			err := deleteAllTmp("./", "test_split")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Split() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -151,7 +165,13 @@ func TestMerge(t *testing.T) {
 			if err := Create("test_merge.txt", []byte("test_merge")); (err != nil) != tt.wantErr {
 				t.Errorf("Merge() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := Split("test_merge.txt", 3); (err != nil) != tt.wantErr {
+			if err := Split("test_merge.txt", 3, func(num int, data []byte) {
+				ft := fmt.Sprintf("%s%d.tmp", strings.TrimSuffix(tt.args.filename, filepath.Ext(tt.args.filename)), num)
+				err := Create(ft, data)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("Split() error = %v, wantErr %v", err, tt.wantErr)
+				}
+			}); (err != nil) != tt.wantErr {
 				t.Errorf("Merge() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err := Delete("test_merge.txt"); err != nil {

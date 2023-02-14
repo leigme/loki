@@ -11,6 +11,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 )
@@ -161,4 +162,12 @@ func Merge(dir, filename string) error {
 		return deleteAllTmp(filepath.Dir(filename), strings.TrimSuffix(f.Name(), filepath.Ext(f.Name())))
 	}
 	return err
+}
+
+func Name(skip int) string {
+	_, filename, _, ok := runtime.Caller(skip)
+	if !ok {
+		return ""
+	}
+	return strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filename))
 }

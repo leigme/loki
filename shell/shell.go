@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 )
 
 type Shell interface {
@@ -66,6 +67,7 @@ func New(opts ...Option) Shell {
 		s.cmdHeaders = []string{loki.UnixBash, "-c"}
 		s.pathHeader = loki.UnixPwd
 	}
+	s.ProcessBar = progressing.New()
 	for _, apply := range opts {
 		apply(&s.shellOptions)
 	}
@@ -81,6 +83,7 @@ func WithProcess(bar progressing.ProcessBar) Option {
 }
 
 func execute(args ...string) ([]byte, error) {
+	defer loki.CostTime(time.Now())
 	cmd := exec.Command(args[0], args[1], args[2])
 	output, err := cmd.CombinedOutput()
 	if err != nil {

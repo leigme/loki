@@ -69,6 +69,6 @@ func newDefaultOption() *CommandOption {
 	return &CommandOption{
 		Short: "",
 		Long:  "",
-		Skip:  3,
+		Skip:  2,
 	}
 }

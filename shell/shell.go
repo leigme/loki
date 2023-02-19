@@ -67,7 +67,6 @@ func New(opts ...Option) Shell {
 		s.cmdHeaders = []string{loki.UnixBash, "-c"}
 		s.pathHeader = loki.UnixPwd
 	}
-	s.ProcessBar = progressing.New()
 	for _, apply := range opts {
 		apply(&s.shellOptions)
 	}

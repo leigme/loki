@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/leigme/loki"
 	"github.com/leigme/progressing"
+	"log"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -82,7 +83,9 @@ func WithProcess(bar progressing.ProcessBar) Option {
 }
 
 func execute(args ...string) ([]byte, error) {
-	defer loki.CostTime(time.Now())
+	defer func() {
+		log.Println(loki.CostTime(time.Now()))
+	}()
 	cmd := exec.Command(args[0], args[1], args[2])
 	output, err := cmd.CombinedOutput()
 	if err != nil {

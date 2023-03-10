@@ -17,7 +17,13 @@ type Command interface {
 
 type CommandOption struct {
 	cobra.Command
-	Skip int
+	flags []Flag
+	Skip  int
+}
+
+type Flag struct {
+	p                             *string
+	name, shorthand, value, usage string
 }
 
 type Exec func(cmd *cobra.Command, args []string)
@@ -36,17 +42,14 @@ func NewCommand(c Command, opts ...Option) *cobra.Command {
 		Args:  co.Args,
 		Run:   c.Execute(),
 	}
+	for _, flag := range co.flags {
+		cc.Flags().StringVarP(flag.p, flag.name, flag.shorthand, flag.value, flag.usage)
+	}
 	return cc
 }
 
 func Add(rootCmd *cobra.Command, c Command, opts ...Option) {
 	rootCmd.AddCommand(NewCommand(c, opts...))
-}
-
-func AddFlags(rootCmd *cobra.Command, c Command, p *string, name, shorthand string, value string, usage string, opts ...Option) {
-	cc := NewCommand(c, opts...)
-	rootCmd.AddCommand(cc)
-	cc.Flags().StringVarP(p, name, shorthand, value, usage)
 }
 
 func WithShort(short string) Option {
@@ -70,6 +73,14 @@ func WithLong(long string) Option {
 func WithArgs(args cobra.PositionalArgs) Option {
 	return func(option *CommandOption) {
 		option.Args = args
+	}
+}
+
+func WithFlags(flags []Flag) Option {
+	return func(option *CommandOption) {
+		if len(flags) > 0 {
+			option.flags = flags
+		}
 	}
 }
 

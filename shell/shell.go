@@ -6,7 +6,6 @@ Copyright © 2023 leig <leigme@gmail.com>
 */
 
 import (
-	"errors"
 	"fmt"
 	"github.com/leigme/loki"
 	"github.com/leigme/progressing"
@@ -20,7 +19,6 @@ import (
 type Shell interface {
 	Exe(command string) string
 	Pwd() string
-	ParseArgs(args []string) (result map[string]string, err error)
 }
 
 type shell struct {
@@ -56,30 +54,6 @@ func (s *shell) Pwd() string {
 		return fmt.Sprintf("execute pwd: %s, is error: %s", s.pathHeader, err.Error())
 	}
 	return s.out(output)
-}
-
-func (s *shell) ParseArgs(args []string) (result map[string]string, err error) {
-	result = make(map[string]string, 0)
-	for i := 0; i < len(args); i++ {
-		if strings.HasPrefix(args[i], "-") {
-			v := args[i][1:]
-			if strings.EqualFold(v, "-") {
-				v = v[1:]
-			}
-			if strings.Contains(v, "=") {
-				vs := strings.Split(v, "=")
-				result[vs[0]] = vs[1]
-			} else {
-				i += 1
-				if i >= len(args) || strings.HasPrefix(args[i], "-") {
-					err = errors.New("args parse error")
-					return nil, err
-				}
-				result[v] = args[i]
-			}
-		}
-	}
-	return
 }
 
 func New(opts ...Option) Shell {

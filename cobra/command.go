@@ -17,6 +17,7 @@ type Command interface {
 
 type CommandOption struct {
 	Short, Long string
+	Args        cobra.PositionalArgs
 	Skip        int
 }
 
@@ -53,6 +54,12 @@ func WithLong(long string) Option {
 			return
 		}
 		option.Long = long
+	}
+}
+
+func WithArgs(positionalArgs cobra.PositionalArgs) Option {
+	return func(option *CommandOption) {
+		option.Args = positionalArgs
 	}
 }
 

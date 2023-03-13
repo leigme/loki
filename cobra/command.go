@@ -22,8 +22,8 @@ type CommandOption struct {
 }
 
 type Flag struct {
-	p                             *string
-	name, shorthand, value, usage string
+	P                             *string
+	Name, Shorthand, Value, Usage string
 }
 
 type Exec func(cmd *cobra.Command, args []string)
@@ -43,7 +43,7 @@ func NewCommand(c Command, opts ...Option) *cobra.Command {
 		Run:   c.Execute(),
 	}
 	for _, flag := range co.flags {
-		cc.Flags().StringVarP(flag.p, flag.name, flag.shorthand, flag.value, flag.usage)
+		cc.Flags().StringVarP(flag.P, flag.Name, flag.Shorthand, flag.Value, flag.Usage)
 	}
 	return cc
 }

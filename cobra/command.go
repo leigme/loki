@@ -97,6 +97,6 @@ func newDefaultOption() *CommandOption {
 	option := CommandOption{}
 	option.Short = ""
 	option.Long = ""
-	option.Skip = 2
+	option.Skip = 3
 	return &option
 }

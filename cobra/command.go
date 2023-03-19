@@ -1,8 +1,8 @@
 package cobra
 
 import (
-	"github.com/leigme/loki/file"
 	"github.com/spf13/cobra"
+	"reflect"
 	"strings"
 )
 
@@ -36,7 +36,7 @@ func NewCommand(c Command, opts ...Option) *cobra.Command {
 		apply(co)
 	}
 	cc := &cobra.Command{
-		Use:   file.Name(co.Skip),
+		Use:   reflect.TypeOf(c).Elem().Name(),
 		Short: co.Short,
 		Long:  co.Long,
 		Args:  co.Args,

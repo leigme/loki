@@ -169,5 +169,10 @@ func Name(skip int) string {
 	if !ok {
 		return ""
 	}
-	return strings.TrimSuffix(filepath.Base(filename), filepath.Ext(filename))
+	return TrimSuffix(filename)
+}
+
+// TrimSuffix 去除文件名后缀
+func TrimSuffix(filename string) string {
+	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }

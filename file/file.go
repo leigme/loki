@@ -176,3 +176,24 @@ func Name(skip int) string {
 func TrimSuffix(filename string) string {
 	return strings.TrimSuffix(filename, filepath.Ext(filename))
 }
+
+func Arr2str(contents []string) (result string) {
+	result = ""
+	for _, content := range contents {
+		result += content + "\n"
+	}
+	return
+}
+
+func Str2Arr(content string) (result []string) {
+	result = make([]string, 0)
+	r := bufio.NewReader(strings.NewReader(content))
+	for {
+		l, _, err := r.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		result = append(result, string(l))
+	}
+	return
+}

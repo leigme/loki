@@ -6,9 +6,12 @@ Copyright © 2023 leig <leigme@gmail.com>
 */
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/leigme/loki"
+	"github.com/leigme/loki/file"
 	"github.com/leigme/progressing"
+	"io"
 	"log"
 	"os/exec"
 	"runtime"
@@ -17,28 +20,28 @@ import (
 )
 
 type Shell interface {
-	Exe(command string) string
+	Exe(command string) interface{}
 	Pwd() string
 }
 
 type shell struct {
 	cmdHeaders []string
 	pathHeader string
-	out        func(data []byte) string
 	shellOptions
 }
 
 type shellOptions struct {
 	progressing.ProcessBar
+	out func(data [][]byte) interface{}
 }
 
 type Option func(options *shellOptions)
 
-func (s *shell) Exe(command string) string {
+func (s *shell) Exe(command string) interface{} {
 	if s.ProcessBar != nil {
 		s.ProcessBar.Start()
 	}
-	output, err := execute(s.cmdHeaders[0], s.cmdHeaders[1], command)
+	output, err := s.execute(s.cmdHeaders[0], s.cmdHeaders[1], command)
 	if s.ProcessBar != nil {
 		s.ProcessBar.Stop()
 	}
@@ -49,17 +52,25 @@ func (s *shell) Exe(command string) string {
 }
 
 func (s *shell) Pwd() string {
-	output, err := execute(s.cmdHeaders[0], s.cmdHeaders[1], s.pathHeader)
+	output, err := s.execute(s.cmdHeaders[0], s.cmdHeaders[1], s.pathHeader)
 	if err != nil {
 		return fmt.Sprintf("execute pwd: %s, is error: %s", s.pathHeader, err.Error())
 	}
-	return s.out(output)
+	result := make([]string, 0)
+	for _, op := range output {
+		result = append(result, string(op))
+	}
+	return file.Arr2str(result)
 }
 
 func New(opts ...Option) Shell {
 	s := shell{}
-	s.out = func(data []byte) string {
-		return string(data)
+	s.out = func(data [][]byte) interface{} {
+		r := make([]string, 0)
+		for _, d := range data {
+			r = append(r, string(d))
+		}
+		return r
 	}
 	if strings.EqualFold(runtime.GOOS, loki.WindowsOs) {
 		s.cmdHeaders = []string{loki.WindowsCmd, "/C"}
@@ -74,6 +85,12 @@ func New(opts ...Option) Shell {
 	return &s
 }
 
+func WithOut(out func(data [][]byte) interface{}) Option {
+	return func(options *shellOptions) {
+		options.out = out
+	}
+}
+
 func WithProcess(bar progressing.ProcessBar) Option {
 	return func(options *shellOptions) {
 		if bar != nil {
@@ -82,14 +99,40 @@ func WithProcess(bar progressing.ProcessBar) Option {
 	}
 }
 
-func execute(args ...string) ([]byte, error) {
+func (s *shell) execute(args ...string) ([][]byte, error) {
+	var (
+		stdout    io.ReadCloser
+		outputBuf *bufio.Reader
+		err       error
+	)
 	defer func() {
-		log.Println(loki.CostTime(time.Now()))
+		log.Printf("cmd: %s execute time is: %d\n", args[2], loki.CostTime(time.Now()))
 	}()
 	cmd := exec.Command(args[0], args[1], args[2])
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
+	result := make([][]byte, 0)
+	// 创建获取命令输出的管道
+	if stdout, err = cmd.StdoutPipe(); err != nil {
+		log.Printf("Error: Can not obtain stdout pipe: %v for cmd: %s\n", err, args[2])
+		return result, err
 	}
-	return output, nil
+	// 执行命令
+	if err = cmd.Start(); err != nil {
+		log.Printf("Error: The cmd: %s start is err\n", args[2])
+		return result, err
+	}
+	// 使用带缓冲的读取器
+	outputBuf = bufio.NewReader(stdout)
+	for {
+		output, _, err := outputBuf.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		result = append(result, output)
+	}
+
+	if err = cmd.Wait(); err != nil {
+		log.Printf("Error: wait err: %v\n", err)
+		return result, err
+	}
+	return result, nil
 }
